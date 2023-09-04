@@ -1,0 +1,17 @@
+{
+  "canisters": {
+    "db": {
+      "main": "main.mo",
+      "type": "motoko",
+      "optimize": "cycles"
+    }
+  },
+  "defaults": {
+    "build": {
+      "args": "",
+      "packtool": "mops sources"
+    }
+  },
+  "dfx": "0.14.3",
+  "version": 1
+}

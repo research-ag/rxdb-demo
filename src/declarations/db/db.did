@@ -1,0 +1,14 @@
+type TodoListItemDoc = 
+ record {
+   deleted: bool;
+   id: nat64;
+   isChecked: bool;
+   "text": text;
+   updatedAt: nat32;
+ };
+type TodoListDb = 
+ service {
+   pull: (nat32, opt nat64, nat) -> (vec TodoListItemDoc);
+   push: (vec TodoListItemDoc) -> (vec TodoListItemDoc);
+ };
+service : () -> TodoListDb
