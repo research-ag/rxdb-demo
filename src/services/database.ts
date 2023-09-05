@@ -126,7 +126,6 @@ export default class DB {
 
                 pull: {
                     handler: async (lastCheckpoint: any, batchSize): Promise<any> => {
-                        console.log('PULLING');
                         this.pulling$.next(true);
                         const minTimestamp = lastCheckpoint ? lastCheckpoint.updatedAt : 0;
                         const lastId: [] | [bigint] = lastCheckpoint ? [BigInt(lastCheckpoint.id)] : [];
@@ -139,7 +138,6 @@ export default class DB {
                                 text: x.payload.text,
                             }));
                             this.pulling$.next(false);
-                            console.log('PULLING RES', documentsFromRemote);
                             return {
                                 documents: documentsFromRemote,
                                 checkpoint:
