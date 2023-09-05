@@ -4,12 +4,20 @@ import {RxDBDevModePlugin} from 'rxdb/plugins/dev-mode';
 import {HttpAgent} from "@dfinity/agent";
 import {createActor as createDbActor} from "../declarations/db";
 import {replicateRxCollection} from "rxdb/plugins/replication";
-import {TodoListItemDoc} from "../declarations/db/db.did";
+import {ItemDoc} from "../declarations/db/db.did";
 import {BehaviorSubject, Observable} from "rxjs";
 
 addRxPlugin(RxDBDevModePlugin);
 
-export type TodoListItemDocument = { id: string; updatedAt: number, text: string; isChecked: number; deleted: boolean };
+export type TodoListItemDocument = {
+    id: string;
+    updatedAt: number,
+    deleted: boolean,
+    payload: {
+        text: string,
+        isChecked: boolean
+    }
+};
 
 export default class DB {
 
@@ -59,11 +67,17 @@ export default class DB {
                         properties: {
                             id: {type: "string", maxLength: 100},
                             updatedAt: {type: "number", multipleOf: 1, minimum: 0, maximum: (1 << 16) * (1 << 16) - 1},
-                            text: {type: "string", maxLength: 256, default: ''},
-                            isChecked: {type: "number", multipleOf: 1, minimum: 0, maximum: 1, default: 0},
+                            payload: {
+                                type: "record",
+                                properties: {
+                                    text: {type: "string", maxLength: 256},
+                                    isChecked: {type: "boolean"},
+                                },
+                                required: ["text", "isChecked"],
+                            }
                         },
-                        required: ["id", "updatedAt", "text", "isChecked"],
-                        indexes: ["updatedAt", "isChecked"],
+                        required: ["id", "updatedAt", "payload"],
+                        indexes: ["updatedAt"],
                     },
                 },
             });
@@ -92,8 +106,7 @@ export default class DB {
                             const arg = store.map(x => ({
                                 id: BigInt(x.id),
                                 updatedAt: Math.floor(Date.now() / 1000),
-                                isChecked: x.isChecked > 0,
-                                text: x.text,
+                                payload: x.payload,
                                 deleted: x.deleted,
                             }));
                             const res = await can.push(arg);
@@ -113,17 +126,20 @@ export default class DB {
 
                 pull: {
                     handler: async (lastCheckpoint: any, batchSize): Promise<any> => {
+                        console.log('PULLING');
                         this.pulling$.next(true);
                         const minTimestamp = lastCheckpoint ? lastCheckpoint.updatedAt : 0;
                         const lastId: [] | [bigint] = lastCheckpoint ? [BigInt(lastCheckpoint.id)] : [];
                         try {
-                            let raw: TodoListItemDoc[] = (await can.pull(minTimestamp, lastId, BigInt(batchSize)));
+                            let raw: ItemDoc[] = (await can.pull(minTimestamp, lastId, BigInt(batchSize)));
                             const documentsFromRemote: TodoListItemDocument[] = raw.map(x => ({
                                 ...x,
                                 id: x.id.toString(),
-                                isChecked: x.isChecked ? 1 : 0,
+                                isChecked: x.payload.isChecked,
+                                text: x.payload.text,
                             }));
                             this.pulling$.next(false);
+                            console.log('PULLING RES', documentsFromRemote);
                             return {
                                 documents: documentsFromRemote,
                                 checkpoint:

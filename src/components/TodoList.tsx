@@ -5,8 +5,10 @@ import {RxCollection} from "rxdb";
 
 interface Todo {
     id: string;
-    text: string;
-    isChecked: boolean;
+    payload: {
+        text: string;
+        isChecked: boolean;
+    }
 }
 
 const TodoList: React.FC = () => {
@@ -22,8 +24,7 @@ const TodoList: React.FC = () => {
             const col = await DB.instance.getTodo();
             col.find().$.subscribe(items => setTodos(items.map(x => ({
                 id: x.id,
-                text: x.text,
-                isChecked: x.isChecked > 0
+                payload: x.payload,
             }))));
             setCollection(col);
             DB.instance.subscribeOnPulling().subscribe(setPulling);
@@ -38,20 +39,23 @@ const TodoList: React.FC = () => {
         await collection.insert({
             id: Date.now().toString(),
             updatedAt: Math.floor(Date.now() / 1000),
-            text: newTodo,
-            isChecked: 0,
             deleted: false,
+            payload: {
+                text: newTodo,
+                isChecked: false,
+            }
         });
     };
-
 
     const toggleTodoCompletion = async (id: string) => {
         const idx = todos.findIndex(x => x.id === id);
         if (idx >= 0) {
             await collection.incrementalUpsert({
                 id: id,
-                text: todos[idx].text,
-                isChecked: (!todos[idx].isChecked) ? 1 : 0
+                payload: {
+                    text: todos[idx].payload.text,
+                    isChecked: !todos[idx].payload.isChecked,
+                },
             });
         }
     };
@@ -82,10 +86,10 @@ const TodoList: React.FC = () => {
                     <li key={todo.id}>
                         <input
                             type="checkbox"
-                            checked={todo.isChecked}
+                            checked={todo.payload.isChecked}
                             onChange={() => toggleTodoCompletion(todo.id)}
                         />
-                        <span className={todo.isChecked ? 'completed' : ''}>{todo.text}</span>
+                        <span className={todo.payload.isChecked ? 'completed' : ''}>{todo.payload.text}</span>
                         <div style={{flexGrow: '1'}}></div>
                         <button onClick={() => removeTodo(todo.id)}>Remove</button>
                     </li>
