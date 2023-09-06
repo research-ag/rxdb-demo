@@ -4,6 +4,18 @@
       "main": "main.mo",
       "type": "motoko",
       "optimize": "cycles"
+    },
+    "frontend": {
+      "dependencies": [
+        "db"
+      ],
+      "frontend": {
+        "entrypoint": "./build/index.html"
+      },
+      "source": [
+        "./build"
+      ],
+      "type": "assets"
     }
   },
   "defaults": {

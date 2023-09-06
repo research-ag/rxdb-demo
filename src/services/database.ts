@@ -172,4 +172,10 @@ export default class DB {
             this.replicationState.cancel();
         }
     }
+
+    public refresh() {
+        if (this.replicationState) {
+            this.replicationState.reSync();
+        }
+    }
 }

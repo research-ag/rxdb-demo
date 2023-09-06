@@ -58,7 +58,7 @@ function App() {
     }
 
     return (
-        <div style={{display: 'flex', flexDirection: 'column', rowGap: '1rem', padding: '1rem', alignItems: 'center'}}>
+        <div style={{display: 'flex', flexDirection: 'column', rowGap: '1rem', padding: '1rem', alignItems: 'stretch'}}>
             <div style={{width: '100%', display: 'flex', justifyContent: 'space-between'}}>
                 <span>II login:</span>
                 {isLoggedInII ? (

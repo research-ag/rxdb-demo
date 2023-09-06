@@ -78,6 +78,7 @@
     "start:local": "export DFX_NETWORK=local && node scripts/start.js",
     "start:ic": "export DFX_NETWORK=ic && node scripts/start.js",
     "build:local": "export DFX_NETWORK=local && node scripts/build.js",
+    "build": "export DFX_NETWORK=ic && node scripts/build.js",
     "build:ic": "export DFX_NETWORK=ic && node scripts/build.js",
     "test": "node scripts/test.js"
   },

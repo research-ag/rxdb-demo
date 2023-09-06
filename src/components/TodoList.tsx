@@ -72,6 +72,10 @@ const TodoList: React.FC<Props> = ({identity}: Props) => {
         }
     };
 
+    const refresh = async () => {
+        db!.refresh();
+    };
+
     const removeTodo = async (id: string) => {
         await collection.bulkRemove([id]);
     };
@@ -83,6 +87,7 @@ const TodoList: React.FC<Props> = ({identity}: Props) => {
                 <div style={{flexGrow: '1'}}></div>
                 {pulling && <span>Pulling...</span>}
                 {pushing && <span>Pushing...</span>}
+                {db && !pulling && !pushing && <button onClick={() => refresh()}>Refresh</button>}
             </div>
             <div className="add-todo">
                 <input
