@@ -2,6 +2,7 @@ import React, {useEffect, useState} from 'react';
 import './TodoList.css';
 import DB, {TodoListItemDocument} from "../services/database";
 import {RxCollection} from "rxdb";
+import {Identity} from "@dfinity/agent";
 
 interface Todo {
     id: string;
@@ -11,7 +12,11 @@ interface Todo {
     }
 }
 
-const TodoList: React.FC = () => {
+interface Props {
+    identity: Identity;
+}
+
+const TodoList: React.FC<Props> = ({identity}: Props) => {
 
     const [collection, setCollection] = useState<RxCollection<TodoListItemDocument>>(undefined!);
     const [todos, setTodos] = useState<Todo[]>([]);
@@ -19,19 +24,26 @@ const TodoList: React.FC = () => {
     const [pulling, setPulling] = useState(false);
     const [pushing, setPushing] = useState(false);
 
+    const [db, setDb] = useState<DB | null>(null);
+
     useEffect(() => {
         const init = async () => {
-            const col = await DB.instance.getTodo();
+            if (db) {
+                db.stop();
+            }
+            const database = new DB(identity);
+            setDb(database);
+            const col = await database.getTodo();
             col.find().$.subscribe(items => setTodos(items.map(x => ({
                 id: x.id,
                 payload: x.payload,
             }))));
             setCollection(col);
-            DB.instance.subscribeOnPulling().subscribe(setPulling);
-            DB.instance.subscribeOnPushing().subscribe(setPushing);
+            database.subscribeOnPulling().subscribe(setPulling);
+            database.subscribeOnPushing().subscribe(setPushing);
         }
         init().then();
-    }, []);
+    }, [identity]);
 
     const addTodo = async () => {
         if (newTodo.trim() === '') return;
@@ -66,7 +78,7 @@ const TodoList: React.FC = () => {
 
     return !!collection ? (
         <div className="todo-container">
-            <div style={{ display: 'flex', width: '100%', alignItems: 'center', columnGap: '1rem'}}>
+            <div style={{display: 'flex', width: '100%', alignItems: 'center', columnGap: '1rem'}}>
                 <h1>Todo List</h1>
                 <div style={{flexGrow: '1'}}></div>
                 {pulling && <span>Pulling...</span>}

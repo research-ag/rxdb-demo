@@ -1,9 +1,9 @@
 import {addRxPlugin, createRxDatabase, lastOfArray, RxCollection, RxDatabase} from "rxdb";
 import {getRxStorageDexie} from 'rxdb/plugins/storage-dexie';
 import {RxDBDevModePlugin} from 'rxdb/plugins/dev-mode';
-import {HttpAgent} from "@dfinity/agent";
+import {HttpAgent, Identity} from "@dfinity/agent";
 import {createActor as createDbActor} from "../declarations/db";
-import {replicateRxCollection} from "rxdb/plugins/replication";
+import {replicateRxCollection, RxReplicationState} from "rxdb/plugins/replication";
 import {ItemDoc} from "../declarations/db/db.did";
 import {BehaviorSubject, Observable} from "rxjs";
 
@@ -21,18 +21,13 @@ export type TodoListItemDocument = {
 
 export default class DB {
 
-    private static _instance: DB | undefined;
-    public static get instance(): DB {
-        if (!this._instance) {
-            this._instance = new DB();
-        }
-        return this._instance;
-    }
-
     private db?: RxDatabase;
+    private replicationState?: RxReplicationState<any, any>;
+    private pullInterval?: any;
 
     private pulling$: BehaviorSubject<boolean> = new BehaviorSubject<boolean>(false);
     private pushing$: BehaviorSubject<boolean> = new BehaviorSubject<boolean>(false);
+    private init: Promise<void> | undefined;
 
     subscribeOnPulling(): Observable<boolean> {
         return this.pulling$.asObservable();
@@ -42,16 +37,21 @@ export default class DB {
         return this.pushing$.asObservable();
     }
 
-    private constructor() {
-        this.init = this.initializeDatabase().then(this.init = undefined);
+    public async getTodo(): Promise<RxCollection<TodoListItemDocument>> {
+        if (!this.db) {
+            await this.init;
+        }
+        return this.db!.todos;
     }
 
-    private init: Promise<void> | undefined;
+    constructor(private readonly identity: Identity) {
+        this.init = this.initializeDatabase(this.identity).then(this.init = undefined);
+    }
 
-    private async initializeDatabase() {
+    private async initializeDatabase(identity: Identity) {
         try {
             const db = await createRxDatabase({
-                name: 'todolist',
+                name: 'todolist_' + identity.getPrincipal().toText(),
                 storage: getRxStorageDexie(),
                 ignoreDuplicate: true,
                 multiInstance: true,
@@ -87,16 +87,17 @@ export default class DB {
             const agent = new HttpAgent({
                 host: process.env.DFX_NETWORK === 'ic' ? 'https://ic0.app' : 'http://127.0.0.1:4943',
                 retryTimes: 5,
+                identity,
             });
             if (process.env.DFX_NETWORK === 'local') {
                 await agent.fetchRootKey();
             }
             const can = createDbActor(process.env.DB_CANISTER_ID!, {agent});
-            const replicationState = await replicateRxCollection({
+            this.replicationState = replicateRxCollection({
                 collection: todos,
-                replicationIdentifier: 'anything',
+                replicationIdentifier: 'todo-' + identity.getPrincipal().toText(),
                 retryTime: 5 * 1000,
-                autoStart: true,
+                autoStart: false,
                 deletedField: 'deleted',
                 push: {
                     handler: async (docs): Promise<any> => {
@@ -118,9 +119,7 @@ export default class DB {
                             throw err;
                         }
                     },
-
                     batchSize: 100,
-
                     modifier: (d) => d,
                 },
 
@@ -158,16 +157,19 @@ export default class DB {
                     modifier: (d) => d,
                 },
             });
-            setInterval(() => replicationState.reSync(), 15000);
+            this.replicationState.start().then();
+            this.pullInterval = setInterval(() => this.replicationState!.reSync(), 15000);
         } catch (error) {
             console.error('Error initializing the database:', error);
         }
     }
 
-    public async getTodo(): Promise<RxCollection<TodoListItemDocument>> {
-        if (!this.db) {
-            await this.init;
+    public stop() {
+        if (this.pullInterval !== undefined) {
+            clearInterval(this.pullInterval);
         }
-        return this.db!.todos;
+        if (this.replicationState) {
+            this.replicationState.cancel();
+        }
     }
 }

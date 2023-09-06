@@ -1,6 +1,9 @@
 import AssocList "mo:base/AssocList";
+import List "mo:base/List";
+import Iter "mo:base/Iter";
 import Debug "mo:base/Debug";
 import Principal "mo:base/Principal";
+import Vector "mo:vector";
 
 import DB "db";
 
@@ -51,6 +54,15 @@ actor class TodoListDb() {
       case (?db) DB.getLatest(db, updatedAt, lastId, limit);
       case (null)[];
     };
+  };
+
+  public shared query ({ caller }) func dump() : async [(Principal, [?DB.ItemDoc<TodoListItem>])] {
+    Iter.toArray<(Principal, [?DB.ItemDoc<TodoListItem>])>(
+      Iter.map<(Principal, DB.DbInit<TodoListItem>), (Principal, [?DB.ItemDoc<TodoListItem>])>(
+        List.toIter(storage),
+        func (item) = (item.0, Vector.toArray<?DB.ItemDoc<TodoListItem>>(item.1.db.vec))
+      )
+    );
   };
 
 };
