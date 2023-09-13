@@ -1,12 +1,43 @@
+import Array "mo:base/Array";
+import Debug "mo:base/Debug";
+import List "mo:base/List";
 import Nat32 "mo:base/Nat32";
 import Nat64 "mo:base/Nat64";
-import Debug "mo:base/Debug";
+import Vector "mo:vector";
 
 import RXMDB "mo:rxmodb";
 import PK "mo:rxmodb/primarykey";
 import IDX "mo:rxmodb/index";
 
 module RxDbTable {
+
+  public func migrate<T1, T2>(src : DbInit<T1>, cast : (x : T1) -> T2) : DbInit<T2> = {
+    db = {
+      var reuse_queue = src.db.reuse_queue;
+      vec = {
+        var data_blocks = Array.tabulateVar<[var ??ItemDoc<T2>]>(
+          src.db.vec.data_blocks.size(),
+          func(i) = Array.tabulateVar<??ItemDoc<T2>>(
+            src.db.vec.data_blocks[i].size(),
+            func(j) = switch (src.db.vec.data_blocks[i][j]) {
+              case (??item) ??{
+                id = item.id;
+                updatedAt = item.updatedAt;
+                deleted = item.deleted;
+                payload = cast(item.payload);
+              };
+              case (?null) ?null;
+              case (null) null;
+            },
+          ),
+        );
+        var i_block = src.db.vec.i_block;
+        var i_element = src.db.vec.i_element;
+      };
+    };
+    pk = src.pk;
+    updatedAt = src.updatedAt;
+  };
 
   public type ItemDoc<T> = {
     id : Nat64;

@@ -5,11 +5,12 @@ export interface ItemDoc {
   'id' : bigint,
   'deleted' : boolean,
   'updatedAt' : number,
-  'payload' : TodoListItem,
+  'payload' : TodoListItemV1,
 }
 export interface TodoListDb {
+  'dump' : ActorMethod<[], Array<[Principal, Array<[] | [ItemDoc]>]>>,
   'pull' : ActorMethod<[number, [] | [bigint], bigint], Array<ItemDoc>>,
   'push' : ActorMethod<[Array<ItemDoc>], Array<ItemDoc>>,
 }
-export interface TodoListItem { 'isChecked' : boolean, 'text' : string }
+export interface TodoListItemV1 { 'isChecked' : boolean, 'text' : string }
 export interface _SERVICE extends TodoListDb {}

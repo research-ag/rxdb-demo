@@ -1,13 +1,17 @@
 import {addRxPlugin, createRxDatabase, lastOfArray, RxCollection, RxDatabase} from "rxdb";
 import {getRxStorageDexie} from 'rxdb/plugins/storage-dexie';
-import {RxDBDevModePlugin} from 'rxdb/plugins/dev-mode';
 import {HttpAgent, Identity} from "@dfinity/agent";
 import {createActor as createDbActor} from "../declarations/db";
 import {replicateRxCollection, RxReplicationState} from "rxdb/plugins/replication";
 import {ItemDoc} from "../declarations/db/db.did";
 import {BehaviorSubject, Observable} from "rxjs";
+import {RxDBMigrationPlugin} from 'rxdb/plugins/migration';
+
+import {RxDBDevModePlugin} from 'rxdb/plugins/dev-mode';
 
 addRxPlugin(RxDBDevModePlugin);
+
+addRxPlugin(RxDBMigrationPlugin);
 
 export type TodoListItemDocument = {
     id: string;

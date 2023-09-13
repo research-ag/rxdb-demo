@@ -1,10 +1,14 @@
-type TodoListItem = 
+type TodoListItemV1 = 
  record {
    isChecked: bool;
    "text": text;
  };
 type TodoListDb = 
  service {
+   dump: () -> (vec record {
+                      principal;
+                      vec opt ItemDoc;
+                    }) query;
    pull: (nat32, opt nat64, nat) -> (vec ItemDoc) query;
    push: (vec ItemDoc) -> (vec ItemDoc);
  };
@@ -12,7 +16,7 @@ type ItemDoc =
  record {
    deleted: bool;
    id: nat64;
-   payload: TodoListItem;
+   payload: TodoListItemV1;
    updatedAt: nat32;
  };
 service : () -> TodoListDb
