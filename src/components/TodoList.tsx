@@ -9,6 +9,7 @@ interface Todo {
     payload: {
         text: string;
         isChecked: boolean;
+        isImportant: boolean;
     }
 }
 
@@ -55,6 +56,7 @@ const TodoList: React.FC<Props> = ({identity}: Props) => {
             payload: {
                 text: newTodo,
                 isChecked: false,
+                isImportant: false,
             }
         });
     };
@@ -65,8 +67,21 @@ const TodoList: React.FC<Props> = ({identity}: Props) => {
             await collection.incrementalUpsert({
                 id: id,
                 payload: {
-                    text: todos[idx].payload.text,
+                    ...todos[idx].payload,
                     isChecked: !todos[idx].payload.isChecked,
+                },
+            });
+        }
+    };
+
+    const toggleTodoImportant = async (id: string) => {
+        const idx = todos.findIndex(x => x.id === id);
+        if (idx >= 0) {
+            await collection.incrementalUpsert({
+                id: id,
+                payload: {
+                    ...todos[idx].payload,
+                    isImportant: !todos[idx].payload.isImportant,
                 },
             });
         }
@@ -100,7 +115,7 @@ const TodoList: React.FC<Props> = ({identity}: Props) => {
             </div>
             <ul className="todo-list">
                 {todos.map((todo) => (
-                    <li key={todo.id}>
+                    <li key={todo.id} className={todo.payload.isImportant ? 'important-item' : ''}>
                         <input
                             type="checkbox"
                             checked={todo.payload.isChecked}
@@ -108,6 +123,7 @@ const TodoList: React.FC<Props> = ({identity}: Props) => {
                         />
                         <span className={todo.payload.isChecked ? 'completed' : ''}>{todo.payload.text}</span>
                         <div style={{flexGrow: '1'}}></div>
+                        <button onClick={() => toggleTodoImportant(todo.id)}>!</button>
                         <button onClick={() => removeTodo(todo.id)}>Remove</button>
                     </li>
                 ))}

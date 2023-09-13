@@ -1,6 +1,7 @@
 export const idlFactory = ({ IDL }) => {
   const TodoListItem = IDL.Record({
     'isChecked' : IDL.Bool,
+    'isImportant' : IDL.Bool,
     'text' : IDL.Text,
   });
   const ItemDoc = IDL.Record({

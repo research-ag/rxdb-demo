@@ -12,5 +12,9 @@ export interface TodoListDb {
   'pull' : ActorMethod<[number, [] | [bigint], bigint], Array<ItemDoc>>,
   'push' : ActorMethod<[Array<ItemDoc>], Array<ItemDoc>>,
 }
-export interface TodoListItem { 'isChecked' : boolean, 'text' : string }
+export interface TodoListItem {
+  'isChecked' : boolean,
+  'isImportant' : boolean,
+  'text' : string,
+}
 export interface _SERVICE extends TodoListDb {}

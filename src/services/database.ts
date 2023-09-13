@@ -19,7 +19,8 @@ export type TodoListItemDocument = {
     deleted: boolean,
     payload: {
         text: string,
-        isChecked: boolean
+        isChecked: boolean,
+        isImportant: boolean,
     }
 };
 
@@ -66,7 +67,7 @@ export default class DB {
                 todos: {
                     schema: {
                         type: "object",
-                        version: 0,
+                        version: 1,
                         primaryKey: "id",
                         properties: {
                             id: {type: "string", maxLength: 100},
@@ -76,13 +77,20 @@ export default class DB {
                                 properties: {
                                     text: {type: "string", maxLength: 256},
                                     isChecked: {type: "boolean"},
+                                    isImportant: {type: "boolean"},
                                 },
-                                required: ["text", "isChecked"],
+                                required: ["text", "isChecked", "isImportant"],
                             }
                         },
                         required: ["id", "updatedAt", "payload"],
                         indexes: ["updatedAt"],
                     },
+                    migrationStrategies: {
+                        1: (oldDoc) => {
+                            oldDoc.payload.isImportant = false;
+                            return oldDoc;
+                        },
+                    }
                 },
             });
             this.db = db;
@@ -137,8 +145,9 @@ export default class DB {
                             const documentsFromRemote: TodoListItemDocument[] = raw.map(x => ({
                                 ...x,
                                 id: x.id.toString(),
-                                isChecked: x.payload.isChecked,
                                 text: x.payload.text,
+                                isChecked: x.payload.isChecked,
+                                isImportant: x.payload.isImportant,
                             }));
                             this.pulling$.next(false);
                             return {

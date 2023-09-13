@@ -1,6 +1,7 @@
 type TodoListItem = 
  record {
    isChecked: bool;
+   isImportant: bool;
    "text": text;
  };
 type TodoListDb = 
