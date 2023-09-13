@@ -1,4 +1,4 @@
-type TodoListItemV1 = 
+type TodoListItem = 
  record {
    isChecked: bool;
    "text": text;
@@ -16,7 +16,7 @@ type ItemDoc =
  record {
    deleted: bool;
    id: nat64;
-   payload: TodoListItemV1;
+   payload: TodoListItem;
    updatedAt: nat32;
  };
 service : () -> TodoListDb

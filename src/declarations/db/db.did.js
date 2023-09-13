@@ -1,5 +1,5 @@
 export const idlFactory = ({ IDL }) => {
-  const TodoListItemV1 = IDL.Record({
+  const TodoListItem = IDL.Record({
     'isChecked' : IDL.Bool,
     'text' : IDL.Text,
   });
@@ -7,7 +7,7 @@ export const idlFactory = ({ IDL }) => {
     'id' : IDL.Nat64,
     'deleted' : IDL.Bool,
     'updatedAt' : IDL.Nat32,
-    'payload' : TodoListItemV1,
+    'payload' : TodoListItem,
   });
   const TodoListDb = IDL.Service({
     'dump' : IDL.Func(
