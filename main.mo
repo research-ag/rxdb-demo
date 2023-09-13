@@ -10,16 +10,16 @@ import DB "db";
 actor class TodoListDb() {
 
   type StableStorage<T> = AssocList.AssocList<Principal, DB.DbInit<T>>;
-  type TodoListItemV1 = {
+  type TodoListItem = {
     text : Text;
     isChecked : Bool;
   };
 
-  stable var storage : StableStorage<TodoListItemV1> = null;
+  stable var storage : StableStorage<TodoListItem> = null;
 
-  var databasesCache : AssocList.AssocList<Principal, DB.DbUse<TodoListItemV1>> = null;
+  var databasesCache : AssocList.AssocList<Principal, DB.DbUse<TodoListItem>> = null;
 
-  private func getDatabase(owner : Principal, notFoundStrategy : { #create; #returnNull }) : ?DB.DbUse<TodoListItemV1> {
+  private func getDatabase(owner : Principal, notFoundStrategy : { #create; #returnNull }) : ?DB.DbUse<TodoListItem> {
     switch (AssocList.find(databasesCache, owner, Principal.equal)) {
       case (?db) ?db;
       case (null) {
@@ -29,7 +29,7 @@ actor class TodoListDb() {
             switch (notFoundStrategy) {
               case (#returnNull) return null;
               case (#create) {
-                let store = DB.empty<TodoListItemV1>();
+                let store = DB.empty<TodoListItem>();
                 let (upd, _) = AssocList.replace(storage, owner, Principal.equal, ?store);
                 storage := upd;
                 store;
@@ -45,23 +45,23 @@ actor class TodoListDb() {
     };
   };
 
-  public shared ({ caller }) func push(docs : [DB.ItemDoc<TodoListItemV1>]) : async [DB.ItemDoc<TodoListItemV1>] {
+  public shared ({ caller }) func push(docs : [DB.ItemDoc<TodoListItem>]) : async [DB.ItemDoc<TodoListItem>] {
     let ?db = getDatabase(caller, #create) else Debug.trap("Can never happen");
     DB.pushUpdates(db, docs);
   };
 
-  public shared query ({ caller }) func pull(updatedAt : Nat32, lastId : ?Nat64, limit : Nat) : async [DB.ItemDoc<TodoListItemV1>] {
+  public shared query ({ caller }) func pull(updatedAt : Nat32, lastId : ?Nat64, limit : Nat) : async [DB.ItemDoc<TodoListItem>] {
     switch (getDatabase(caller, #returnNull)) {
       case (?db) DB.getLatest(db, updatedAt, lastId, limit);
       case (null)[];
     };
   };
 
-  public shared query ({ caller }) func dump() : async [(Principal, [?DB.ItemDoc<TodoListItemV1>])] {
-    Iter.toArray<(Principal, [?DB.ItemDoc<TodoListItemV1>])>(
-      Iter.map<(Principal, DB.DbInit<TodoListItemV1>), (Principal, [?DB.ItemDoc<TodoListItemV1>])>(
+  public shared query ({ caller }) func dump() : async [(Principal, [?DB.ItemDoc<TodoListItem>])] {
+    Iter.toArray<(Principal, [?DB.ItemDoc<TodoListItem>])>(
+      Iter.map<(Principal, DB.DbInit<TodoListItem>), (Principal, [?DB.ItemDoc<TodoListItem>])>(
         List.toIter(storage),
-        func(item) = (item.0, Vector.toArray<?DB.ItemDoc<TodoListItemV1>>(item.1.db.vec)),
+        func(item) = (item.0, Vector.toArray<?DB.ItemDoc<TodoListItem>>(item.1.db.vec)),
       )
     );
   };
