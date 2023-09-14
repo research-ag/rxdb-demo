@@ -14,26 +14,18 @@ module RxDbTable {
   public func migrate<T1, T2>(src : DbInit<T1>, cast : (x : T1) -> T2) : DbInit<T2> = {
     db = {
       var reuse_queue = src.db.reuse_queue;
-      vec = {
-        var data_blocks = Array.tabulateVar<[var ??ItemDoc<T2>]>(
-          src.db.vec.data_blocks.size(),
-          func(i) = Array.tabulateVar<??ItemDoc<T2>>(
-            src.db.vec.data_blocks[i].size(),
-            func(j) = switch (src.db.vec.data_blocks[i][j]) {
-              case (??item) ??{
-                id = item.id;
-                updatedAt = item.updatedAt;
-                deleted = item.deleted;
-                payload = cast(item.payload);
-              };
-              case (?null) ?null;
-              case (null) null;
-            },
-          ),
-        );
-        var i_block = src.db.vec.i_block;
-        var i_element = src.db.vec.i_element;
-      };
+      vec = Vector.map<?ItemDoc<T1>, ?ItemDoc<T2>>(
+        src.db.vec,
+        func(x) = switch (x) {
+          case (?item) ?{
+            id = item.id;
+            updatedAt = item.updatedAt;
+            deleted = item.deleted;
+            payload = cast(item.payload);
+          };
+          case (null) null;
+        },
+      );
     };
     pk = src.pk;
     updatedAt = src.updatedAt;
